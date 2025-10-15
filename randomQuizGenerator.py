@@ -4,6 +4,11 @@
 
 import random
 import os
+import shutil
+import time
+
+# Set the time limit in seconds (e.g., 1 hour = 3600 seconds)
+TIME_LIMIT = 3600
 
 # The quiz data. Keys are states and values are their capitals.
 capitals = {'Alabama': 'Montgomery', 'Alaska': 'Juneau', 'Arizona': 'Phoenix',
@@ -25,44 +30,52 @@ capitals = {'Alabama': 'Montgomery', 'Alaska': 'Juneau', 'Arizona': 'Phoenix',
 
 # Create a folder to store the quizzes
 quiz_folder = "capitals_quizzes"
+
+# Check if the quiz folder exists and if it's older than the time limit
+if os.path.exists(quiz_folder):
+    folder_creation_time = os.path.getmtime(quiz_folder)
+    if (time.time() - folder_creation_time) > TIME_LIMIT:
+        print(f"'{quiz_folder}' is older than {TIME_LIMIT} seconds. Deleting it.")
+        shutil.rmtree(quiz_folder)
+        print("Directory deleted.")
+
 # This will create the folder if it doesn't already exist
 os.makedirs(quiz_folder, exist_ok=True)
 
 # Generate 35 quiz files.
-
 for quizNum in range(35):
-    # TODO: Create the quiz and answer key files.
+    # Create the quiz and answer key files.
     quiz_filename = os.path.join(quiz_folder, f'capitalsquiz{quizNum + 1}.txt')
     answerkey_filename = os.path.join(quiz_folder, f'capitalsquiz_answers{quizNum + 1}.txt')
     
-    quizFile = open(quiz_filename, 'w')
-    answerKeyFile = open(answerkey_filename, 'w')
+    with open(quiz_filename, 'w') as quizFile, open(answerkey_filename, 'w') as answerKeyFile:
+        # Write out the header for the quiz.
+        quizFile.write('Name:\n\nDate:\n\nPeriod:\n\n')
+        quizFile.write(f"{' ' * 20}State Capitals Quiz (Form {quizNum + 1})\n\n")
 
-    # TODO: Write out the header for the quiz.
-    quizFile.write('Name:\n\nDate:\n\nPeriod:\n\n')
-    quizFile.write((' ' * 20) + f'State Capitals Quiz (Form{quizNum + 1})')
-    quizFile.write('\n\n')
+        # Shuffle the order of the states.
+        states = list(capitals.keys())
+        random.shuffle(states)
+        
+        all_capitals = list(capitals.values())
 
-    # TODO: Shuffle the order of the states.
-    states = list(capitals.keys())
-    random.shuffle(states)
+        # Loop through all 50 states, making a question for each one.
+        for questionNum in range(50):
+            # Get right and wrong answers.
+            correctAnswer = capitals[states[questionNum]]
+            
+            # Get a list of all capitals except the correct one.
+            wrong_capitals = [c for c in all_capitals if c != correctAnswer]
+            wrongAnswers = random.sample(wrong_capitals, 3)
+            
+            answerOptions = wrongAnswers + [correctAnswer]
+            random.shuffle(answerOptions)
 
-    # TODO: Loop through all 50 states, making a question for each one.
-    for questionNum in range(50):
-        # Get right and wrong answers.
-        correctAnswer = capitals[states[questionNum]]
-        wrongAnswers = list(capitals.values())
-        del wrongAnswers[wrongAnswers.index(correctAnswer)]
-        wrongAnswers = random.sample(wrongAnswers, 3)
-        answerOptions = wrongAnswers + [correctAnswer]
-        random.shuffle(answerOptions)
-
-        # TODO: Write the question and answer options to the quiz file.
-        quizFile.write(f'{questionNum + 1}. What is the capital of {states[questionNum]}?\n')
-        for i in range(4):
-            quizFile.write(f" {'ABCD'[i]}. { answerOptions[i]}\n")
-        quizFile.write('\n')
-        # TODO: Write the answer key to a file.
-        answerKeyFile.write(f"{questionNum + 1}. {'ABCD'[answerOptions.index(correctAnswer)]}")
-    quizFile.close()
-    answerKeyFile.close()
+            # Write the question and answer options to the quiz file.
+            quizFile.write(f'{questionNum + 1}. What is the capital of {states[questionNum]}?\n')
+            for i in range(4):
+                quizFile.write(f" {'ABCD'[i]}. {answerOptions[i]}\n")
+            quizFile.write('\n')
+            
+            # Write the answer key to a file.
+            answerKeyFile.write(f"{questionNum + 1}. {'ABCD'[answerOptions.index(correctAnswer)]}\n")
